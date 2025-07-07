@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能化标注小组_品牌数据转换工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1e293b',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-height {
+                transition: max-height 0.3s ease-in-out;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            .history-item-hover {
+                @apply transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <!-- 顶部导航 -->
+    <header class="bg-gradient-primary text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa fa-exchange text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight text-shadow">智能化标注小组_品牌数据转换工具</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <button id="history-btn" class="p-2 rounded-full hover:bg-white/20 transition-all duration-300 relative">
+                    <i class="fa fa-history"></i>
+                    <span class="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-4 h-4 flex items-center justify-center" id="history-badge" style="display:none;">!</span>
+                </button>
+                <a href="https://applink.larkoffice.com/T8WTVCAUxuQb" target="_blank" class="p-2 rounded-full hover:bg-white/20 transition-all duration-300">
+                    <i class="fa fa-clock-o"></i>
+                </a>
+                <button id="help-btn" class="p-2 rounded-full hover:bg-white/20 transition-all duration-300">
+                    <i class="fa fa-question-circle"></i>
+                </button>
+            </div>
+            <!-- 移动端菜单按钮 -->
+            <div class="md:hidden flex items-center">
+                <button id="mobile-menu-btn" class="p-2 rounded-full hover:bg-white/20 transition-all duration-300">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg absolute w-full z-10 dark:bg-gray-800">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+                <button id="mobile-history-btn" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fa fa-history text-primary"></i>
+                    <span>历史记录</span>
+                    <span class="ml-auto bg-danger text-white text-xs rounded-full px-2 py-0.5" id="mobile-history-badge" style="display:none;">!</span>
+                </button>
+                <a href="https://applink.larkoffice.com/T8WTVCAUxuQb" target="_blank" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fa fa-clock-o text-primary"></i>
+                    <span>使用记录</span>
+                </a>
+                <button id="mobile-help-btn" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fa fa-question-circle text-primary"></i>
+                    <span>使用帮助</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- 介绍卡片 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6 transform hover:shadow-lg transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
+                <h2 class="text-xl font-bold mb-3 text-gray-800 dark:text-white">功能介绍</h2>
+                <p id="mode-description" class="text-gray-600 mb-4 dark:text-gray-300">将品牌名称和Logo链接转换为JSON格式数据，支持处理链接为空的情况。</p>
+                <div id="feature-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
+                    <div class="flex items-start">
+                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                        <p>自动识别品牌名与链接的对应关系</p>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                        <p>处理链接缺失的情况</p>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                        <p>双击输入框完成转换并复制</p>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                        <p>支持批量处理多个品牌</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6 transform hover:shadow-lg transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-2 md:mb-0">输入内容</h2>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="clear-btn" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-300 flex items-center dark:bg-gray-700 dark:text-gray-200">
+                            <i class="fa fa-trash-o mr-1"></i>清空
+                        </button>
+                        <button id="mode-toggle-btn" class="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-300 flex items-center">
+                            <i class="fa fa-exchange mr-1"></i><span id="mode-toggle-text">切转数组模式</span>
+                        </button>
+                        <button id="example-btn" class="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-300 flex items-center">
+                            <i class="fa fa-file-text-o mr-1"></i>示例
+                        </button>
+                        <button id="convert-btn" class="px-3 py-2 bg-success hover:bg-success/90 text-white rounded-lg transition-colors duration-300 flex items-center">
+                            <i class="fa fa-magic mr-1"></i>转换并复制
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <textarea id="input-text" class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none resize-none transition-all duration-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="请输入品牌名称和链接（每行一个，品牌名和链接交替输入）&#10;例如：&#10;LI-NING/李宁&#10;http://example.com/logo1.jpg&#10;鲨客&#10;http://example.com/logo2.jpg"></textarea>
+                    <div class="absolute bottom-3 right-3 text-xs text-gray-400 dark:text-gray-500">
+                        <span id="char-count">0</span> 字符
+                    </div>
+                </div>
+                
+                <div id="format-instructions" class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                    <p>格式说明：</p>
+                    <ul class="list-disc pl-5 mt-1 space-y-1">
+                        <li>第一行输入品牌名称，第二行输入对应的Logo链接</li>
+                        <li>若某个品牌没有Logo链接，请直接跳过该行</li>
+                        <li>系统会自动识别品牌名和链接的对应关系</li>
+                        <li><span class="text-primary font-medium">双击输入框或点击"转换并复制"按钮完成转换和复制</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 输出区域 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6 dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-2 md:mb-0">输出结果</h2>
+                    <button id="copy-btn" class="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-300 flex items-center">
+                        <i class="fa fa-copy mr-1"></i>复制
+                    </button>
+                </div>
+                
+                <div class="relative">
+                    <pre id="output-json" class="w-full h-40 p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-auto text-sm font-mono dark:bg-gray-700 dark:border-gray-600 dark:text-white"></pre>
+                </div>
+            </div>
+
+            <!-- 预览区域 -->
+            <div id="preview-section" class="bg-white rounded-xl shadow-md p-6 mb-8 dark:bg-gray-800 dark:border-gray-700">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">数据预览</h2>
+                <div id="preview-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-0 overflow-hidden transition-height duration-500">
+                    <!-- 预览卡片将通过JavaScript动态生成 -->
+                </div>
+                <div id="no-preview" class="text-center py-8 text-gray-400 dark:text-gray-500">
+                    <i class="fa fa-picture-o text-4xl mb-3"></i>
+                    <p>转换后的数据将在这里预览</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-6 dark:bg-gray-900">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm text-gray-400">© 2025 品牌数据转换工具 - 版权所有</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">
+                        <i class="fa fa-github"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">
+                        <i class="fa fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">
+                        <i class="fa fa-linkedin"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 帮助模态框 -->
+    <div id="help-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-y-auto m-4 transform scale-95 transition-transform duration-300 dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">使用帮助</h3>
+                <button id="close-help" class="text-gray-400 hover:text-gray-600 dark:text-gray-300">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="json-help-content" class="space-y-4">
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">如何使用？</h4>
+                        <ol class="list-decimal pl-5 space-y-2 text-gray-600 dark:text-gray-300">
+                            <li>在输入框中按照格式输入品牌名称和链接</li>
+                            <li>每行输入一个内容，品牌名和链接交替输入</li>
+                            <li>双击输入框或点击"转换并复制"按钮完成转换</li>
+                            <li>直接粘贴到需要使用的地方</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">输入格式示例</h4>
+                        <pre class="bg-gray-50 p-3 rounded-lg text-sm font-mono text-gray-600 dark:bg-gray-700 dark:text-gray-300">LI-NING/李宁
+http://example.com/logo1.jpg
+鲨客
+http://example.com/logo2.jpg
+瑞慈体检
+http://example.com/logo3.jpg</pre>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">链接为空的情况</h4>
+                        <p class="text-gray-600 dark:text-gray-300">如果某个品牌没有Logo链接，可以直接跳过该行，系统会自动将其链接设为空字符串。</p>
+                        <pre class="bg-gray-50 p-3 rounded-lg text-sm font-mono text-gray-600 dark:bg-gray-700 dark:text-gray-300 mt-2">LI-NING/李宁
+鲨客
+http://example.com/logo2.jpg
+瑞慈体检
+http://example.com/logo3.jpg</pre>
+                        <p class="text-gray-600 dark:text-gray-300 mt-2">上述示例中，"LI-NING/李宁"的链接会被自动设为""。</p>
+                    </div>
+                </div>
+                <div id="array-help-content" class="space-y-4 hidden">
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">如何使用？</h4>
+                        <ol class="list-decimal pl-5 space-y-2 text-gray-600 dark:text-gray-300">
+                            <li>在输入框中每行输入一个项目</li>
+                            <li>双击输入框或点击"转换并复制"按钮将所有项目转换为JSON数组格式</li>
+                            <li>直接粘贴到需要使用的地方</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">输入格式示例</h4>
+                        <pre class="bg-gray-50 p-3 rounded-lg text-sm font-mono text-gray-600 dark:bg-gray-700 dark:text-gray-300">南海
+青放
+华帝
+海尔</pre>
+                        <p class="text-gray-600 dark:text-gray-300 mt-2">将被转换为：</p>
+                        <pre class="bg-gray-50 p-3 rounded-lg text-sm font-mono text-gray-600 dark:bg-gray-700 dark:text-gray-300">["南海","青放","华帝","海尔"]</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-b-xl dark:bg-gray-700">
+                <button id="close-help-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-300 w-full">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录模态框 -->
+    <div id="history-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden m-4 transform scale-95 transition-transform duration-300 dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">历史记录</h3>
+                <div class="flex items-center space-x-3">
+                    <button id="history-help-btn" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                        <i class="fa fa-question-circle text-xl"></i>
+                    </button>
+                    <button id="close-history" class="text-gray-400 hover:text-gray-600 dark:text-gray-300">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <input id="history-search" type="text" placeholder="搜索历史记录..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="relative">
+                            <select id="history-filter" class="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="all">所有模式</option>
+                                <option value="json">JSON模式</option>
+                                <option value="array">数组模式</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                                <i class="fa fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                        <button id="clear-all-history" class="px-3 py-2 bg-danger hover:bg-danger/90 text-white rounded-lg transition-colors duration-300 flex items-center">
+                            <i class="fa fa-trash mr-1"></i>清空全部
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="history-list-container" class="overflow-y-auto max-h-[calc(80vh-190px)]">
+                <div id="history-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <!-- 历史记录将通过JavaScript动态生成 -->
+                    <div id="empty-history" class="py-16 text-center text-gray-400 dark:text-gray-500">
+                        <i class="fa fa-history text-4xl mb-3"></i>
+                        <p>暂无历史记录</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-gray-50 rounded-b-xl dark:bg-gray-700">
+                <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                    <span>最多保存50条记录，保存在浏览器本地</span>
+                    <span id="history-count">0/50</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录帮助模态框 -->
+    <div id="history-help-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-y-auto m-4 transform scale-95 transition-transform duration-300 dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">历史记录使用帮助</h3>
+                <button id="close-history-help" class="text-gray-400 hover:text-gray-600 dark:text-gray-300">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">什么是历史记录？</h4>
+                        <p class="text-gray-600 dark:text-gray-300">历史记录功能会自动保存您的转换操作，包括输入内容、输出结果、转换模式和时间戳，方便您日后查看和复用之前的转换。</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">记录存储在哪里？</h4>
+                        <p class="text-gray-600 dark:text-gray-300">历史记录保存在您的浏览器本地存储中，关闭页面后不会丢失。但如果您清除浏览器数据或使用隐私模式，记录可能会被删除。</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">如何使用历史记录？</h4>
+                        <ol class="list-decimal pl-5 space-y-2 text-gray-600 dark:text-gray-300">
+                            <li><span class="font-medium">查看记录</span>：点击顶部导航栏的历史图标打开历史记录面板</li>
+                            <li><span class="font-medium">搜索记录</span>：使用搜索框可按关键词查找相关记录</li>
+                            <li><span class="font-medium">筛选记录</span>：使用模式筛选下拉菜单可按JSON模式或数组模式查看记录</li>
+                            <li><span class="font-medium">加载记录</span>：点击记录下方的"加载"按钮，可将历史记录恢复到输入框</li>
+                            <li><span class="font-medium">删除记录</span>：点击记录下方的"删除"按钮可删除单条记录</li>
+                            <li><span class="font-medium">清空记录</span>：点击"清空全部"按钮可删除所有历史记录</li>
+                        </ol>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">记录数量限制</h4>
+                        <p class="text-gray-600 dark:text-gray-300">系统最多保存50条历史记录，当超过限制时，最早的记录会被自动删除。</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">隐私说明</h4>
+                        <p class="text-gray-600 dark:text-gray-300">所有历史记录仅存储在您的本地浏览器中，不会上传到任何服务器，您可以放心使用。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-b-xl dark:bg-gray-700">
+                <button id="close-history-help-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-300 w-full">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复制成功提示 -->
+    <div id="copy-toast" class="fixed bottom-4 right-4 bg-success text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transform translate-y-4 transition-all duration-300 flex items-center">
+        <i class="fa fa-check-circle mr-2"></i>
+        <span>已复制到剪贴板</span>
+    </div>
+
+    <!-- 操作成功提示 -->
+    <div id="success-toast" class="fixed bottom-4 right-4 bg-success text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transform translate-y-4 transition-all duration-300 flex items-center">
+        <i class="fa fa-check-circle mr-2"></i>
+        <span id="success-message">操作成功</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素
+            const inputText = document.getElementById('input-text');
+            const outputJson = document.getElementById('output-json');
+            const clearBtn = document.getElementById('clear-btn');
+            const modeToggleBtn = document.getElementById('mode-toggle-btn');
+            const modeToggleText = document.getElementById('mode-toggle-text');
+            const exampleBtn = document.getElementById('example-btn');
+            const convertBtn = document.getElementById('convert-btn');
+            const charCount = document.getElementById('char-count');
+            const previewContainer = document.getElementById('preview-container');
+            const noPreview = document.getElementById('no-preview');
+            const helpBtn = document.getElementById('help-btn');
+            const helpModal = document.getElementById('help-modal');
+            const closeHelp = document.getElementById('close-help');
+            const closeHelpBtn = document.getElementById('close-help-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const copyToast = document.getElementById('copy-toast');
+            const modeDescription = document.getElementById('mode-description');
+            const featureList = document.getElementById('feature-list');
+            const formatInstructions = document.getElementById('format-instructions');
+            const previewSection = document.getElementById('preview-section');
+            const jsonHelpContent = document.getElementById('json-help-content');
+            const arrayHelpContent = document.getElementById('array-help-content');
+            const successToast = document.getElementById('success-toast');
+            const successMessage = document.getElementById('success-message');
+            
+            // 移动端菜单元素
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileHistoryBtn = document.getElementById('mobile-history-btn');
+            const mobileHelpBtn = document.getElementById('mobile-help-btn');
+            
+            // 历史记录相关元素
+            const historyBtn = document.getElementById('history-btn');
+            const historyModal = document.getElementById('history-modal');
+            const closeHistory = document.getElementById('close-history');
+            const historyList = document.getElementById('history-list');
+            const emptyHistory = document.getElementById('empty-history');
+            const historySearch = document.getElementById('history-search');
+            const historyFilter = document.getElementById('history-filter');
+            const clearAllHistory = document.getElementById('clear-all-history');
+            const historyCount = document.getElementById('history-count');
+            const historyBadge = document.getElementById('history-badge');
+            const mobileHistoryBadge = document.getElementById('mobile-history-badge');
+            
+            // 历史记录帮助相关元素
+            const historyHelpBtn = document.getElementById('history-help-btn');
+            const historyHelpModal = document.getElementById('history-help-modal');
+            const closeHistoryHelp = document.getElementById('close-history-help');
+            const closeHistoryHelpBtn = document.getElementById('close-history-help-btn');
+            
+            // 模式状态
+            let isArrayMode = false;
+            
+            // 历史记录配置
+            const STORAGE_KEY = 'brandConverterHistory';
+            const MAX_HISTORY_RECORDS = 50; // 修改为50条
+            
+            // 从localStorage加载历史记录
+            let historyRecords = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            
+            // 确保日期是Date对象
+            historyRecords.forEach(record => {
+                if (record.date) {
+                    record.date = new Date(record.date);
+                }
+            });
+            
+            // 示例数据
+            const jsonExampleData = `LI-NING/李宁
+http://p3-thunder.ecombdimg.com/tos-cn-i-9tc1r98m18/1ea60af791f240d09c8eaffae7f2ef3e~tplv-9tc1r98m18-image.image
+鲨客
+http://p3-thunder.ecombdimg.com/tos-cn-i-9tc1r98m18/16213245d9134d07ba7be1599bd2b910~tplv-9tc1r98m18-image.image
+瑞慈体检
+http://p3-thunder.ecombdimg.com/tos-cn-i-9tc1r98m18/27e04456cc7c41a3a446b81479342fff~tplv-9tc1r98m18-image.image`;
+            
+            const arrayExampleData = `南海
+青放
+华帝
+海尔`;
+            
+            // JSON模式下的功能介绍
+            const jsonFeatures = `
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>自动识别品牌名与链接的对应关系</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>处理链接缺失的情况</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>双击输入框完成转换并复制</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>支持批量处理多个品牌</p>
+                </div>`;
+            
+            // 数组模式下的功能介绍
+            const arrayFeatures = `
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>将每行文本转换为JSON数组元素</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>自动处理引号和逗号</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>双击输入框完成转换并复制</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                    <p>支持包含特殊字符的项目</p>
+                </div>`;
+            
+            // JSON模式下的格式说明
+            const jsonInstructions = `
+                <p>格式说明：</p>
+                <ul class="list-disc pl-5 mt-1 space-y-1">
+                    <li>第一行输入品牌名称，第二行输入对应的Logo链接</li>
+                    <li>若某个品牌没有Logo链接，请直接跳过该行</li>
+                    <li>系统会自动识别品牌名和链接的对应关系</li>
+                    <li><span class="text-primary font-medium">双击输入框或点击"转换并复制"按钮完成转换和复制</span></li>
+                </ul>`;
+            
+            // 数组模式下的格式说明
+            const arrayInstructions = `
+                <p>格式说明：</p>
+                <ul class="list-disc pl-5 mt-1 space-y-1">
+                    <li>每行输入一个项目</li>
+                    <li>系统会自动将所有项目转换为JSON数组格式</li>
+                    <li><span class="text-primary font-medium">双击输入框或点击"转换并复制"按钮完成转换和复制</span></li>
+                </ul>`;
+            
+            // 转换函数
+            function convertToJson(input) {
+                if (isArrayMode) {
+                    // 数组模式：将每行文本转换为数组元素
+                    const lines = input.trim().split('\n');
+                    const escapedLines = lines.map(item => {
+                        // 转义双引号和反斜杠
+                        return item.replace(/"/g, '\\"').replace(/\\/g, '\\\\');
+                    });
+                    return JSON.stringify(escapedLines);
+                } else {
+                    // JSON模式：保持原有逻辑
+                    const lines = input.trim().split('\n');
+                    const result = [];
+                    
+                    for (let i = 0; i < lines.length; i += 2) {
+                        const brandName = lines[i].trim();
+                        const brandLogo = (i + 1 < lines.length) ? lines[i+1].trim() : "";
+                        
+                        result.push({
+                            "brand_name": brandName,
+                            "is_limited": 1,
+                            "brand_logo": brandLogo
+                        });
+                    }
+                    
+                    return JSON.stringify(result, null, 2);
+                }
+            }
+            
+            // 更新字符计数
+            function updateCharCount() {
+                charCount.textContent = inputText.value.length;
+            }
+            
+            // 生成预览卡片
+            function generatePreviews(data) {
+                previewContainer.innerHTML = '';
+                
+                if (isArrayMode) {
+                    // 数组模式下不显示预览
+                    previewSection.style.display = 'none';
+                    return;
+                }
+                
+                // 恢复预览区域显示
+                previewSection.style.display = 'block';
+                
+                if (data.length === 0) {
+                    previewContainer.style.maxHeight = '0';
+                    noPreview.style.display = 'block';
+                    return;
+                }
+                
+                noPreview.style.display = 'none';
+                previewContainer.style.maxHeight = '1000px';
+                
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transform hover:shadow-md transition-all duration-300 dark:bg-gray-700 dark:border-gray-600';
+                    
+                    const logoContainer = document.createElement('div');
+                    logoContainer.className = 'h-40 bg-gray-100 flex items-center justify-center dark:bg-gray-800';
+                    
+                    const logoImg = document.createElement('img');
+                    logoImg.src = item.brand_logo || 'https://picsum.photos/200/200?random=' + Math.random();
+                    logoImg.alt = `${item.brand_name} 的Logo`;
+                    logoImg.className = 'max-h-full max-w-full object-contain p-2';
+                    logoImg.onerror = function() {
+                        this.src = 'https://picsum.photos/200/200?random=' + Math.random();
+                        this.alt = 'Logo加载失败';
+                    };
+                    
+                    const content = document.createElement('div');
+                    content.className = 'p-4';
+                    
+                    const name = document.createElement('h3');
+                    name.className = 'font-semibold text-gray-800 truncate dark:text-white';
+                    name.textContent = item.brand_name;
+                    
+                    const status = document.createElement('div');
+                    status.className = 'mt-2 text-xs flex items-center';
+                    
+                    const statusIcon = document.createElement('span');
+                    statusIcon.className = 'inline-block w-2 h-2 rounded-full bg-green-500 mr-1';
+                    
+                    const statusText = document.createElement('span');
+                    statusText.className = 'text-gray-500 dark:text-gray-400';
+                    statusText.textContent = item.brand_logo ? '已上传Logo' : '未上传Logo';
+                    
+                    status.appendChild(statusIcon);
+                    status.appendChild(statusText);
+                    content.appendChild(name);
+                    content.appendChild(status);
+                    logoContainer.appendChild(logoImg);
+                    card.appendChild(logoContainer);
+                    card.appendChild(content);
+                    
+                    previewContainer.appendChild(card);
+                });
+            }
+            
+            // 复制到剪贴板
+            function copyToClipboard(text) {
+                // 尝试使用现代方法
+                if (navigator.clipboard) {
+                    return navigator.clipboard.writeText(text)
+                        .catch(err => {
+                            console.error('无法使用现代剪贴板API: ', err);
+                            // 回退到传统方法
+                            return copyWithTextarea(text);
+                        });
+                } else {
+                    // 使用传统方法
+                    return copyWithTextarea(text);
+                }
+            }
+            
+            // 使用textarea复制
+            function copyWithTextarea(text) {
+                return new Promise((resolve, reject) => {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    
+                    try {
+                        textarea.select();
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            resolve();
+                        } else {
+                            reject(new Error('复制命令执行失败'));
+                        }
+                    } catch (err) {
+                        reject(err);
+                    } finally {
+                        document.body.removeChild(textarea);
+                    }
+                });
+            }
+            
+            // 显示复制成功提示
+            function showCopyToast() {
+                copyToast.classList.remove('opacity-0', 'translate-y-4');
+                copyToast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    copyToast.classList.add('opacity-0', 'translate-y-4');
+                    copyToast.classList.remove('opacity-100', 'translate-y-0');
+                }, 2000);
+            }
+            
+            // 显示操作成功提示
+            function showSuccessToast(message) {
+                successMessage.textContent = message;
+                successToast.classList.remove('opacity-0', 'translate-y-4');
+                successToast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    successToast.classList.add('opacity-0', 'translate-y-4');
+                    successToast.classList.remove('opacity-100', 'translate-y-0');
+                }, 2000);
+            }
+            
+            // 自动转换
+            function autoConvert(shouldCopy = false, shouldSaveHistory = false) {
+                const input = inputText.value.trim();
+                if (!input) {
+                    outputJson.textContent = '';
+                    if (!isArrayMode) {
+                        generatePreviews([]);
+                    }
+                    return;
+                }
+                
+                try {
+                    const jsonData = convertToJson(input);
+                    outputJson.textContent = jsonData;
+                    
+                    // 生成预览（仅在JSON模式下）
+                    if (!isArrayMode) {
+                        const parsedData = JSON.parse(jsonData);
+                        generatePreviews(parsedData);
+                    }
+                    
+                    // 如果需要保存历史记录
+                    if (shouldSaveHistory) {
+                        saveToHistory(input, jsonData);
+                    }
+                    
+                    // 如果需要复制，则执行复制操作
+                    if (shouldCopy) {
+                        copyToClipboard(jsonData)
+                            .then(showCopyToast)
+                            .catch(err => {
+                                console.error('复制失败:', err);
+                                alert('复制失败，请手动复制');
+                            });
+                    }
+                    
+                    return jsonData;
+                } catch (error) {
+                    outputJson.textContent = `转换失败: ${error.message}`;
+                    console.error(error);
+                    return null;
+                }
+            }
+            
+            // 切换模式
+            function toggleMode() {
+                isArrayMode = !isArrayMode;
+                
+                if (isArrayMode) {
+                    // 切换到数组模式
+                    modeToggleText.textContent = '切转JSON模式';
+                    modeToggleBtn.classList.remove('bg-primary');
+                    modeToggleBtn.classList.add('bg-danger');
+                    modeDescription.textContent = '将每行文本转换为JSON数组格式。';
+                    featureList.innerHTML = arrayFeatures;
+                    formatInstructions.innerHTML = arrayInstructions;
+                    inputText.placeholder = '请输入需要转换的项目（每行一个）\n例如：\n南海\n青放\n华帝\n海尔';
+                    jsonHelpContent.classList.add('hidden');
+                    arrayHelpContent.classList.remove('hidden');
+                } else {
+                    // 切换到JSON模式
+                    modeToggleText.textContent = '切转数组模式';
+                    modeToggleBtn.classList.remove('bg-danger');
+                    modeToggleBtn.classList.add('bg-primary');
+                    modeDescription.textContent = '将品牌名称和Logo链接转换为JSON格式数据，支持处理链接为空的情况。';
+                    featureList.innerHTML = jsonFeatures;
+                    formatInstructions.innerHTML = jsonInstructions;
+                    inputText.placeholder = '请输入品牌名称和链接（每行一个，品牌名和链接交替输入）\n例如：\nLI-NING/李宁\nhttp://example.com/logo1.jpg\n鲨客\nhttp://example.com/logo2.jpg';
+                    jsonHelpContent.classList.remove('hidden');
+                    arrayHelpContent.classList.add('hidden');
+                }
+                
+                // 保持当前输入内容不变
+                autoConvert(false);
+            }
+            
+            // 保存到历史记录
+            function saveToHistory(input, output) {
+                const now = new Date();
+                const timestamp = now.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                // 创建新记录
+                const newRecord = {
+                    id: Date.now(), // 使用时间戳作为唯一ID
+                    input: input,
+                    output: output,
+                    mode: isArrayMode ? 'array' : 'json',
+                    timestamp: timestamp,
+                    date: now.toISOString() // 存储为ISO字符串以便JSON序列化
+                };
+                
+                // 检查是否已存在相同的记录（基于输入内容）
+                const existingIndex = historyRecords.findIndex(record => record.input === input);
+                
+                if (existingIndex > -1) {
+                    // 如果存在相同记录，更新它并移到最前面
+                    historyRecords.splice(existingIndex, 1);
+                }
+                
+                // 添加新记录到开头
+                historyRecords.unshift(newRecord);
+                
+                // 如果超过最大记录数，删除最早的记录
+                if (historyRecords.length > MAX_HISTORY_RECORDS) {
+                    historyRecords.pop();
+                    
+                    // 显示历史记录已满提示
+                    if (historyRecords.length === MAX_HISTORY_RECORDS) {
+                        showHistoryFullBadge();
+                    }
+                }
+                
+                // 保存到localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(historyRecords));
+                
+                // 更新历史记录显示
+                renderHistoryRecords();
+            }
+            
+            // 显示历史记录已满提示
+            function showHistoryFullBadge() {
+                historyBadge.style.display = 'flex';
+                mobileHistoryBadge.style.display = 'inline-block';
+                
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    historyBadge.style.display = 'none';
+                    mobileHistoryBadge.style.display = 'none';
+                }, 3000);
+            }
+            
+            // 渲染历史记录
+            function renderHistoryRecords() {
+                // 更新历史记录计数
+                historyCount.textContent = `${historyRecords.length}/${MAX_HISTORY_RECORDS}`;
+                
+                // 检查是否有历史记录
+                if (historyRecords.length === 0) {
+                    emptyHistory.style.display = 'block';
+                    historyList.innerHTML = '';
+                    historyList.appendChild(emptyHistory);
+                    return;
+                }
+                
+                // 隐藏空历史提示
+                emptyHistory.style.display = 'none';
+                
+                // 获取搜索和筛选条件
+                const searchTerm = historySearch.value.toLowerCase();
+                const filterMode = historyFilter.value;
+                
+                // 筛选历史记录
+                const filteredRecords = historyRecords.filter(record => {
+                    // 模式筛选
+                    if (filterMode !== 'all' && record.mode !== filterMode) {
+                        return false;
+                    }
+                    
+                    // 搜索筛选
+                    if (searchTerm && !record.input.toLowerCase().includes(searchTerm) && 
+                        !record.output.toLowerCase().includes(searchTerm)) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                // 清空历史记录列表
+                historyList.innerHTML = '';
+                
+                // 如果没有匹配的记录
+                if (filteredRecords.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'py-16 text-center text-gray-400 dark:text-gray-500';
+                    noResults.innerHTML = `
+                        <i class="fa fa-search text-4xl mb-3"></i>
+                        <p>没有找到匹配的记录</p>
+                    `;
+                    historyList.appendChild(noResults);
+                    return;
+                }
+                
+                // 添加筛选后的记录
+                filteredRecords.forEach(record => {
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'history-item-hover p-4';
+                    recordItem.dataset.id = record.id;
+                    
+                    // 截断长文本用于预览
+                    const previewInput = record.input.length > 50 ? record.input.substring(0, 50) + '...' : record.input;
+                    const previewOutput = record.output.length > 80 ? record.output.substring(0, 80) + '...' : record.output;
+                    
+                    recordItem.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-medium px-2 py-1 rounded-full ${record.mode === 'json' ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}">
+                                ${record.mode === 'json' ? 'JSON模式' : '数组模式'}
+                            </span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${record.timestamp}</span>
+                        </div>
+                        <div class="mb-2">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">输入:</p>
+                            <p class="text-sm font-mono break-all text-gray-700 dark:text-gray-300">${previewInput}</p>
+                        </div>
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">输出:</p>
+                            <p class="text-sm font-mono break-all text-gray-700 dark:text-gray-300">${previewOutput}</p>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button class="load-history-btn text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors duration-200 flex items-center dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200">
+                                <i class="fa fa-refresh mr-1"></i>加载
+                            </button>
+                            <button class="delete-history-btn text-xs px-2 py-1 bg-gray-100 hover:bg-danger text-gray-700 hover:text-white rounded transition-colors duration-200 flex items-center dark:bg-gray-700 dark:hover:bg-danger dark:text-gray-200">
+                                <i class="fa fa-trash mr-1"></i>删除
+                            </button>
+                        </div>
+                    `;
+                    
+                    historyList.appendChild(recordItem);
+                });
+                
+                // 添加事件监听器到按钮
+                document.querySelectorAll('.load-history-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const recordId = parseInt(this.closest('.history-item-hover').dataset.id);
+                        loadHistoryRecord(recordId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-history-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const recordId = parseInt(this.closest('.history-item-hover').dataset.id);
+                        deleteHistoryRecord(recordId);
+                    });
+                });
+            }
+            
+            // 加载历史记录
+            function loadHistoryRecord(id) {
+                const record = historyRecords.find(r => r.id === id);
+                if (record) {
+                    // 设置输入文本
+                    inputText.value = record.input;
+                    updateCharCount();
+                    
+                    // 切换到记录的模式
+                    if ((record.mode === 'array' && !isArrayMode) || (record.mode === 'json' && isArrayMode)) {
+                        toggleMode();
+                    }
+                    
+                    // 转换并显示结果，但不保存到历史记录
+                    outputJson.textContent = record.output;
+                    
+                    // 生成预览（仅在JSON模式下）
+                    if (!isArrayMode) {
+                        try {
+                            const parsedData = JSON.parse(record.output);
+                            generatePreviews(parsedData);
+                        } catch (e) {
+                            console.error('解析历史记录JSON失败:', e);
+                        }
+                    }
+                    
+                    // 关闭历史记录模态框
+                    closeHistoryModal();
+                    
+                    // 显示成功提示
+                    showSuccessToast('已加载历史记录');
+                }
+            }
+            
+            // 删除历史记录
+            function deleteHistoryRecord(id) {
+                const initialLength = historyRecords.length;
+                historyRecords = historyRecords.filter(record => record.id !== id);
+                
+                if (historyRecords.length < initialLength) {
+                    // 保存到localStorage
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(historyRecords));
+                    
+                    renderHistoryRecords();
+                    showSuccessToast('已删除历史记录');
+                }
+            }
+            
+            // 清空所有历史记录
+            function clearAllHistoryRecords() {
+                if (historyRecords.length === 0) return;
+                
+                if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+                    historyRecords = [];
+                    // 保存到localStorage
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(historyRecords));
+                    
+                    renderHistoryRecords();
+                    showSuccessToast('已清空所有历史记录');
+                }
+            }
+            
+            // 打开历史记录模态框
+            function openHistoryModal() {
+                renderHistoryRecords();
+                historyModal.classList.remove('opacity-0', 'pointer-events-none');
+                historyModal.querySelector('div').classList.remove('scale-95');
+                historyModal.querySelector('div').classList.add('scale-100');
+                historySearch.focus();
+            }
+            
+            // 关闭历史记录模态框
+            function closeHistoryModal() {
+                historyModal.classList.add('opacity-0', 'pointer-events-none');
+                historyModal.querySelector('div').classList.remove('scale-100');
+                historyModal.querySelector('div').classList.add('scale-95');
+            }
+            
+            // 打开历史记录帮助模态框
+            function openHistoryHelpModal() {
+                historyHelpModal.classList.remove('opacity-0', 'pointer-events-none');
+                historyHelpModal.querySelector('div').classList.remove('scale-95');
+                historyHelpModal.querySelector('div').classList.add('scale-100');
+            }
+            
+            // 关闭历史记录帮助模态框
+            function closeHistoryHelpModal() {
+                historyHelpModal.classList.add('opacity-0', 'pointer-events-none');
+                historyHelpModal.querySelector('div').classList.remove('scale-100');
+                historyHelpModal.querySelector('div').classList.add('scale-95');
+            }
+            
+            // 打开帮助模态框
+            function openHelpModal() {
+                helpModal.classList.remove('opacity-0', 'pointer-events-none');
+                helpModal.querySelector('div').classList.remove('scale-95');
+                helpModal.querySelector('div').classList.add('scale-100');
+            }
+            
+            // 关闭帮助模态框
+            function closeHelpModal() {
+                helpModal.classList.add('opacity-0', 'pointer-events-none');
+                helpModal.querySelector('div').classList.remove('scale-100');
+                helpModal.querySelector('div').classList.add('scale-95');
+            }
+            
+            // 打开移动端菜单
+            function openMobileMenu() {
+                mobileMenu.classList.toggle('hidden');
+            }
+            
+            // 事件监听
+            clearBtn.addEventListener('click', function() {
+                inputText.value = '';
+                outputJson.textContent = '';
+                updateCharCount();
+                if (!isArrayMode) {
+                    generatePreviews([]);
+                }
+            });
+            
+            modeToggleBtn.addEventListener('click', toggleMode);
+            
+            exampleBtn.addEventListener('click', function() {
+                inputText.value = isArrayMode ? arrayExampleData : jsonExampleData;
+                updateCharCount();
+                // 调用自动转换并指定需要复制和保存历史记录
+                autoConvert(true, true);
+            });
+            
+            // 转换并复制按钮
+            convertBtn.addEventListener('click', function() {
+                autoConvert(true, true);
+            });
+            
+            // 双击输入框完成转换并复制
+            inputText.addEventListener('dblclick', function() {
+                autoConvert(true, true);
+            });
+            
+            // 处理粘贴事件
+            inputText.addEventListener('paste', function(e) {
+                e.preventDefault();
+                
+                // 获取剪贴板数据
+                const clipboardData = e.clipboardData || window.clipboardData;
+                const pastedText = clipboardData.getData('text');
+                
+                // 获取当前文本框内容和光标位置
+                const currentValue = inputText.value;
+                const start = inputText.selectionStart;
+                const end = inputText.selectionEnd;
+                
+                // 构建新内容：如果已有内容且不是在行首粘贴，则添加换行符
+                let newValue;
+                if (currentValue && start > 0 && !currentValue.endsWith('\n')) {
+                    newValue = currentValue.substring(0, start) + '\n' + pastedText + currentValue.substring(end);
+                } else {
+                    newValue = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
+                }
+                
+                // 设置新内容
+                inputText.value = newValue;
+                
+                // 计算新的光标位置
+                const newCursorPos = start + pastedText.length + (start > 0 && !currentValue.endsWith('\n') ? 1 : 0);
+                inputText.selectionStart = newCursorPos;
+                inputText.selectionEnd = newCursorPos;
+                
+                // 更新字符计数并转换，粘贴操作后不需要复制
+                updateCharCount();
+                autoConvert(false);
+            });
+            
+            // 常规输入时只转换不复制，使用较长的防抖时间
+            let debounceTimer;
+            inputText.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 常规输入只转换不复制
+                    autoConvert(false);
+                }, 1000); // 延长防抖时间到1秒
+            });
+            
+            // 复制按钮事件
+            copyBtn.addEventListener('click', function() {
+                const jsonText = outputJson.textContent;
+                if (jsonText && jsonText !== "转换失败: 无法读取未定义的属性（如 'trim'）") {
+                    copyToClipboard(jsonText)
+                        .then(showCopyToast)
+                        .catch(err => {
+                            console.error('复制失败:', err);
+                            alert('复制失败，请手动复制');
+                        });
+                } else {
+                    alert('没有可复制的JSON数据');
+                }
+            });
+            
+            // 帮助模态框
+            helpBtn.addEventListener('click', openHelpModal);
+            mobileHelpBtn.addEventListener('click', function() {
+                openHelpModal();
+                openMobileMenu(); // 关闭移动菜单
+            });
+            
+            closeHelp.addEventListener('click', closeHelpModal);
+            closeHelpBtn.addEventListener('click', closeHelpModal);
+            
+            helpModal.addEventListener('click', function(e) {
+                if (e.target === helpModal) {
+                    closeHelpModal();
+                }
+            });
+            
+            // 历史记录模态框
+            historyBtn.addEventListener('click', openHistoryModal);
+            mobileHistoryBtn.addEventListener('click', function() {
+                openHistoryModal();
+                openMobileMenu(); // 关闭移动菜单
+            });
+            
+            closeHistory.addEventListener('click', closeHistoryModal);
+            
+            historyModal.addEventListener('click', function(e) {
+                if (e.target === historyModal) {
+                    closeHistoryModal();
+                }
+            });
+            
+            // 历史记录搜索和筛选
+            historySearch.addEventListener('input', renderHistoryRecords);
+            historyFilter.addEventListener('change', renderHistoryRecords);
+            
+            // 清空所有历史记录
+            clearAllHistory.addEventListener('click', clearAllHistoryRecords);
+            
+            // 历史记录帮助
+            historyHelpBtn.addEventListener('click', openHistoryHelpModal);
+            
+            closeHistoryHelp.addEventListener('click', closeHistoryHelpModal);
+            closeHistoryHelpBtn.addEventListener('click', closeHistoryHelpModal);
+            
+            historyHelpModal.addEventListener('click', function(e) {
+                if (e.target === historyHelpModal) {
+                    closeHistoryHelpModal();
+                }
+            });
+            
+            // 移动端菜单
+            mobileMenuBtn.addEventListener('click', openMobileMenu);
+            
+            // 点击页面其他地方关闭移动菜单
+            document.addEventListener('click', function(e) {
+                if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+            
+            // 初始化
+            updateCharCount();
+            if (!isArrayMode) {
+                generatePreviews([]);
+            }
+            renderHistoryRecords();
+            
+            // 如果是首次使用历史记录功能，显示提示
+            if (historyRecords.length === 0 && !localStorage.getItem('historyHelpShown')) {
+                setTimeout(() => {
+                    openHistoryHelpModal();
+                    localStorage.setItem('historyHelpShown', 'true');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
